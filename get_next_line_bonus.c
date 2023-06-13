@@ -1,0 +1,122 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   get_next_line_bonus.c                              :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: dquitari <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2023/06/12 12:30:07 by dquitari          #+#    #+#             */
+/*   Updated: 2023/06/12 12:30:08 by dquitari         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "get_next_line_bonus.h"
+
+char	*get_trimmed_temp(char *temp)
+{
+	char	*new_temp;
+	ssize_t	line_len;
+	ssize_t	temp_len;
+
+	line_len = ft_strclen(temp, '\n');
+	if (line_len == -1)
+	{
+		free(temp);
+		return (NULL);
+	}
+	temp_len = ft_strclen(temp, '\0');
+	new_temp = ft_substr(temp, line_len + 1, temp_len - line_len);
+	if (!new_temp)
+		return (NULL);
+	free(temp);
+	return (new_temp);
+}
+
+char	*get_new_line(char *temp)
+{
+	ssize_t	line_len;
+	char	*line;
+
+	if (!temp[0])
+		return (NULL);
+	line_len = ft_strclen(temp, '\n');
+	if (line_len == -1)
+	{
+		line_len = ft_strclen(temp, '\0');
+		line = ft_substr(temp, 0, line_len + 1);
+	}
+	else
+		line = ft_substr(temp, 0, line_len + 2);
+	return (line);
+}
+
+char	*clean_memory(char *buf, char *temp)
+{
+	if (buf)
+		free(buf);
+	if (temp)
+		free(temp);
+	return (NULL);
+}
+
+char	*get_temp(int fd, char *temp)
+{
+	char		*buf;
+	int			bytes_read;
+
+	buf = malloc((BUFFER_SIZE + 1) * sizeof(char));
+	if (!buf)
+		return (NULL);
+	bytes_read = 1;
+	while (bytes_read != 0 && !(ft_strchr(temp, '\n')))
+	{
+		bytes_read = read(fd, buf, BUFFER_SIZE);
+		if (bytes_read == -1)
+			return (clean_memory(buf, temp));
+		buf[bytes_read] = '\0';
+		if (!buf)
+			return (NULL);
+		temp = ft_strjoin(temp, buf);
+	}
+	free(buf);
+	return (temp);
+}
+
+char	*get_next_line(int fd)
+{
+	static char	*temp[1024];
+	char		*line;
+
+	if (fd < 0 || BUFFER_SIZE <= 0)
+		return (NULL);
+	temp[fd] = get_temp(fd, temp[fd]);
+	if (!temp[fd])
+		return (NULL);
+	line = get_new_line(temp[fd]);
+	if (!line)
+		return (NULL);
+	temp[fd] = get_trimmed_temp(temp[fd]);
+	return (line);
+}
+
+/*int	main(void)
+{
+	char	*line;
+	int		i;
+	int		fd1;
+
+	fd1 = open("tests/testlong1", O_RDONLY);
+	i = 1;
+	while (i <= 20)
+	{
+		line = get_next_line(fd1);
+		if (!line)
+			return (0);
+		printf("line [%02d]: <%s>\n", i, line);
+		free(line);
+		i++;
+	}
+	free(line);
+	close(fd1);
+	return (0);
+}*/
